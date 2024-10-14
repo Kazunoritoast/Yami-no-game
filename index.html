@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aesthetic Card Game</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            text-transform: uppercase;
+            font-size: 24px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .game-board {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .cards-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+        }
+
+        .card, .milestone {
+            width: 80px;
+            height: 120px;
+            background-color: #e8f1f8;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            color: #333;
+            font-weight: bold;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+
+        .card:hover, .milestone:hover {
+            transform: scale(1.05);
+        }
+
+        .milestone-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #gameStatus {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        /* Card Specific Styling */
+        #spade { color: #000000; background-color: #f8d7da; }
+        #club { color: #000000; background-color: #d1ecf1; }
+        #heart { color: #d9534f; background-color: #f8d7da; }
+        #diamond { color: #007bff; background-color: #d1ecf1; }
+
+    </style>
+</head>
+<body>
+    <div class="game-board">
+        <h1>Yami no Game</h1>
+
+        <!-- Horizontal Cards Row -->
+        <div class="cards-row" id="playerCards">
+            <div class="card" id="spade">Spade</div>
+            <div class="card" id="club">Club</div>
+            <div class="card" id="heart">Heart</div>
+            <div class="card" id="diamond">Diamond</div>
+        </div>
+
+        <!-- Milestone Cards Stack -->
+        <div class="milestone-stack" id="milestones">
+            <div class="milestone" id="milestone1" onclick="revealMilestone(1)">M1</div>
+            <div class="milestone" id="milestone2" onclick="revealMilestone(2)">M2</div>
+            <div class="milestone" id="milestone3" onclick="revealMilestone(3)">M3</div>
+            <div class="milestone" id="milestone4" onclick="revealMilestone(4)">M4</div>
+            <div class="milestone" id="milestone5" onclick="revealMilestone(5)">M5</div>
+        </div>
+
+        <!-- Game Controls -->
+        <button id="revealCard">Reveal Top Card</button>
+        <p id="gameStatus"></p>
+    </div>
+
+    <script>
+        const suits = ['spade', 'club', 'heart', 'diamond'];
+        const deck = [];
+        const milestones = [];
+        const playerPositions = { spade: 0, club: 0, heart: 0, diamond: 0 };
+        let topDeckCard = '';
+        let milestoneRevealed = [false, false, false, false, false];
+
+        // Initialize deck (1-10 only, no K, Q, J)
+        function initializeDeck() {
+            suits.forEach(suit => {
+                for (let i = 1; i <= 10; i++) {
+                    deck.push({ suit: suit, value: i });
+                }
+            });
+            shuffle(deck);
+        }
+
+        // Shuffle function
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Initialize milestones with random cards facing down
+        function initializeMilestones() {
+            shuffle(deck);
+            for (let i = 0; i < 5; i++) {
+                milestones.push(deck.pop());
+            }
+        }
+
+        // Reveal top card of the deck and move the player forward if suit matches
+        function revealTopCard() {
+            if (deck.length === 0) {
+                document.getElementById('gameStatus').innerText = "No more cards in deck!";
+                return;
+            }
+
+            topDeckCard = deck.pop();
+            document.getElementById('gameStatus').innerText = `Top card revealed: ${topDeckCard.suit} ${topDeckCard.value}`;
+            
+            if (playerPositions[topDeckCard.suit] < 5) {
+                playerPositions[topDeckCard.suit]++;
+                document.getElementById(topDeckCard.suit).innerText = `${topDeckCard.suit} (Pos: ${playerPositions[topDeckCard.suit]})`;
+            }
+
+            checkWinner();
+        }
+
+        // Reveal individual milestone cards
+        function revealMilestone(milestoneIndex) {
+            if (milestoneRevealed[milestoneIndex - 1]) return;
+
+            const milestoneCard = milestones[milestoneIndex - 1];
+            const milestoneDiv = document.getElementById(`milestone${milestoneIndex}`);
+            milestoneDiv.innerText = `${milestoneCard.suit} ${milestoneCard.value}`;
+            milestoneRevealed[milestoneIndex - 1] = true;
+
+            if (playerPositions[milestoneCard.suit] > 0) {
+                playerPositions[milestoneCard.suit]--;
+                document.getElementById(milestoneCard.suit).innerText = `${milestoneCard.suit} (Pos: ${playerPositions[milestoneCard.suit]})`;
+            }
+        }
+
+        // Check if a player has won the game
+        function checkWinner() {
+            for (let suit in playerPositions) {
+                if (playerPositions[suit] >= 5) {
+                    document.getElementById('gameStatus').innerText = `${suit} wins the game!`;
+                    document.getElementById('revealCard').disabled = true;
+                    return;
+                }
+            }
+        }
+
+        // Initialize game
+        initializeDeck();
+        initializeMilestones();
+
+        // Event Listeners
+        document.getElementById('revealCard').addEventListener('click', revealTopCard);
+
+    </script>
+</body>
+</html>
